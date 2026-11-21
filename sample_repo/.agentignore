@@ -1,0 +1,2 @@
+# Paths agents must never modify (one glob per line)
+shop/config.py

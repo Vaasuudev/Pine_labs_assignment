@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic SDLC Console</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#fff; --ink:#15181d; --mute:#5d6673; --line:#e2e5ea; --accent:#2457d6; --accent-ink:#fff;
+  --ok:#157347; --ok-bg:#e3f4ea; --warn:#8a5a00; --warn-bg:#fdf0d2; --bad:#b3261e; --bad-bg:#fbe4e2;
+  --work:#2457d6; --work-bg:#e4ecfc; --idle:#5d6673; --idle-bg:#eceef2; --code:#f1f3f6; --add:#e6f5ea; --del:#fbe9e7;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0f1216; --panel:#171b21; --ink:#e8ebf0; --mute:#9aa4b2; --line:#272d36; --accent:#6b93ff; --accent-ink:#0b0e13;
+  --ok:#5fcf8f; --ok-bg:#12291d; --warn:#f0bd5a; --warn-bg:#2e2410; --bad:#ff8a80; --bad-bg:#32191a;
+  --work:#8fb0ff; --work-bg:#16233f; --idle:#9aa4b2; --idle-bg:#222831; --code:#1e232b; --add:#10281a; --del:#321a1a;}}
+*{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--sans)}
+button,input,select,textarea{font:inherit;color:inherit}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:15px;margin:0;font-weight:650;letter-spacing:.2px} header .sp{flex:1}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:999px;font-size:12px;background:var(--idle-bg);color:var(--idle);white-space:nowrap}
+.chip.ok{background:var(--ok-bg);color:var(--ok)} .chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.bad{background:var(--bad-bg);color:var(--bad)} .chip.work{background:var(--work-bg);color:var(--work)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.work .dot{animation:pulse 1.2s ease-in-out infinite} @keyframes pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.work .dot{animation:none}}
+main{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:16px 20px;max-width:1500px;margin:0 auto}
+@media (max-width:900px){main{grid-template-columns:1fr;padding:12px 16px}}
+main>*{min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.card+.card{margin-top:14px} h2{font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--mute);margin:0 0 10px;font-weight:650}
+label{display:block;font-size:12px;color:var(--mute);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--panel)}
+textarea{min-height:70px;resize:vertical} input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.seg{display:flex;gap:6px} .seg label{flex:1;margin:0;padding:7px 9px;border:1px solid var(--line);border-radius:7px;color:var(--ink);cursor:pointer;display:flex;gap:6px;align-items:center}
+.seg input{width:auto} .seg label.sel{border-color:var(--accent);background:var(--work-bg)}
+.seg label.off{opacity:.5;cursor:not-allowed}
+button{border:1px solid var(--line);background:var(--panel);padding:7px 14px;border-radius:7px;cursor:pointer;font-weight:550}
+button:hover{border-color:var(--accent)} button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.danger{color:var(--bad)} button:disabled{opacity:.5;cursor:not-allowed}
+.hint{font-size:12px;color:var(--mute);margin:6px 0 0}
+.runs{list-style:none;margin:0;padding:0;max-height:420px;overflow:auto}
+.runs li{padding:9px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+.runs li:hover{background:var(--idle-bg)} .runs li.sel{border-color:var(--accent);background:var(--work-bg)}
+.runs .id{font-family:var(--mono);font-size:12px} .runs .rq{color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.title{font-size:17px;font-weight:650;margin:0}
+.req{color:var(--mute);margin:6px 0 0;white-space:pre-wrap;max-height:96px;overflow:auto}
+.steps{display:flex;gap:0;margin:16px 0 4px;overflow:auto}
+.step{flex:1;min-width:92px;text-align:center;font-size:12px;color:var(--mute);position:relative;padding-top:20px}
+.step::before{content:"";position:absolute;top:6px;left:0;right:0;height:2px;background:var(--line)}
+.step::after{content:"";position:absolute;top:1px;left:calc(50% - 6px);width:12px;height:12px;border-radius:50%;background:var(--line);border:2px solid var(--panel)}
+.step.done{color:var(--ink)} .step.done::before,.step.done::after{background:var(--ok)}
+.step.cur{color:var(--ink);font-weight:650} .step.cur::after{background:var(--accent)} .step.cur::before{background:linear-gradient(90deg,var(--ok),var(--line))}
+.step.bad::after{background:var(--bad)} .step.bad{color:var(--bad);font-weight:650}
+.banner{border-radius:9px;padding:11px 14px;margin-top:14px;border:1px solid}
+.banner.bad{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)} .banner.warn{background:var(--warn-bg);color:var(--warn);border-color:var(--warn)}
+.banner.ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)} .banner b{display:block;margin-bottom:2px}
+.gate{border:2px solid var(--accent)} .gate .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:end}
+.gate .actions>div{flex:1;min-width:150px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:16px -16px 12px;padding:0 16px;overflow:auto}
+.tab{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:8px 12px;color:var(--mute)}
+.tab.on{color:var(--ink);border-bottom-color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px} th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mute);text-align:left;font-weight:650}
+td,th{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top} td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+pre{background:var(--code);border-radius:8px;padding:10px 12px;overflow:auto;font:12px/1.55 var(--mono);margin:6px 0;white-space:pre-wrap;word-break:break-word}
+.diff{padding:0;white-space:pre} .diff span{display:block;padding:0 12px} .diff .a{background:var(--add)} .diff .d{background:var(--del)} .diff .h{color:var(--accent);font-weight:600}
+.chk{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.badge{font:600 11px var(--mono);padding:2px 7px;border-radius:5px;min-width:46px;text-align:center}
+.badge.pass{background:var(--ok-bg);color:var(--ok)} .badge.fail{background:var(--bad-bg);color:var(--bad)} .badge.info{background:var(--idle-bg);color:var(--idle)}
+.tl{font:12px/1.7 var(--mono)} .tl .t{color:var(--mute);display:inline-block;width:56px;text-align:right;margin-right:10px}
+.tl .k{display:inline-block;min-width:150px;color:var(--accent)} .tl .k.bad{color:var(--bad)} .tl .k.good{color:var(--ok)}
+details{margin:4px 0} summary{cursor:pointer;color:var(--mute)}
+ul.plain{margin:4px 0;padding-left:18px} .mute{color:var(--mute)} .mono{font-family:var(--mono)}
+.empty{color:var(--mute);padding:30px;text-align:center}
+.toast{position:fixed;bottom:18px;right:18px;max-width:420px;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:9px;display:none;z-index:9}
+</style>
+</head>
+<body>
+<header>
+  <h1>Agentic SDLC Console</h1><span class="chip" id="repoChip"></span><span class="sp"></span>
+  <span class="chip" id="keyChip"></span>
+</header>
+<main>
+  <aside>
+    <section class="card">
+      <h2>New run</h2>
+      <label for="reqFile">Requirement</label>
+      <select id="reqFile"></select>
+      <label for="reqText">…or paste one <span class="mute">(overrides the file)</span></label>
+      <textarea id="reqText" placeholder="As a buyer, I want…"></textarea>
+      <label>Model</label>
+      <div class="seg" id="provSeg">
+        <label class="sel"><input type="radio" name="prov" value="mock" checked> Mock</label>
+        <label id="gemLabel"><input type="radio" name="prov" value="gemini"> Gemini</label>
+      </div>
+      <p class="hint" id="provHint"></p>
+      <div id="scenBox"><label for="scen">Failure scenario <span class="mute">(mock only)</span></label><select id="scen"></select></div>
+      <div class="row" style="margin-top:14px"><button class="primary" id="startBtn">Start run</button></div>
+    </section>
+    <section class="card"><h2>Runs</h2><ul class="runs" id="runList"></ul></section>
+  </aside>
+  <section id="detail"><div class="card empty">Start a run, or pick one from the list.</div></section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script nonce="__NONCE__">
+"use strict";
+const TOKEN = "__TOKEN__";
+const $ = (s, r = document) => r.querySelector(s);
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of kids.flat(Infinity)) { if (c == null || c === false) continue; e.append(c.nodeType ? c : document.createTextNode(String(c))); }
+  return e;
+}
+async function api(path, opts) {
+  const r = await fetch(path, Object.assign({}, opts, { headers: { "Content-Type": "application/json", "X-Dashboard-Token": TOKEN } }));
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+let toastTimer; function toast(msg) { const t = $("#toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.style.display = "none", 5000); }
+function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k) || ""; localStorage.setItem(k, v); } catch (e) { return ""; } }
+
+const LABEL = { CREATED: "Starting", PLANNING: "Planning", AWAITING_PLAN_APPROVAL: "Needs plan approval", IMPLEMENTING: "Building & checking",
+  AWAITING_FINAL_APPROVAL: "Needs merge approval", MERGED_AWAITING_DEPLOY_APPROVAL: "Needs deploy approval", DEPLOYED_MOCK: "Deployed (mock)",
+  PAUSED_PROVIDER_DOWN: "Paused: model unavailable", REJECTED: "Rejected", DEPLOY_REJECTED: "Deploy rejected", BLOCKED_NEEDS_HUMAN: "Blocked",
+  ESCALATED_TO_HUMAN: "Escalated to a human", FAILED_MALFORMED_OUTPUT: "Failed: bad model output", FAILED_PROVIDER_ERROR: "Failed: provider error",
+  MERGE_FAILED: "Merge failed", FAILED_INTERNAL: "Internal error" };
+function tone(s) {
+  if (/^AWAITING|DEPLOY_APPROVAL|PAUSED/.test(s)) return "warn";
+  if (/^(CREATED|PLANNING|IMPLEMENTING)$/.test(s)) return "work";
+  if (s === "DEPLOYED_MOCK") return "ok";
+  if (/REJECTED$/.test(s)) return "";
+  return "bad";
+}
+const pill = s => h("span", { class: "chip " + tone(s) }, h("span", { class: "dot" }), LABEL[s] || s);
+const ago = t => { const d = Date.now() / 1000 - t; return d < 90 ? Math.round(d) + "s ago" : d < 5400 ? Math.round(d / 60) + "m ago" : Math.round(d / 3600) + "h ago"; };
+
+let cfg = null, selected = null, lastJSON = "", tab = ls("tab") || "summary", poll = null;
+
+async function loadConfig() {
+  cfg = await api("/api/config");
+  $("#repoChip").textContent = "repo: " + cfg.repo;
+  const k = $("#keyChip"); k.className = "chip " + (cfg.gemini.key_present ? "ok" : "");
+  k.replaceChildren(h("span", { class: "dot" }), cfg.gemini.key_present ? "Gemini key found · " + cfg.gemini.model : "No GEMINI_API_KEY in environment");
+  $("#reqFile").replaceChildren(...cfg.requirements.map(r => h("option", { value: r }, r)));
+  $("#scen").replaceChildren(...cfg.scenarios.map(s => h("option", { value: s, selected: s === "fail-then-fix" }, s)));
+  const gem = $("#gemLabel"); gem.classList.toggle("off", !cfg.gemini.key_present); gem.querySelector("input").disabled = !cfg.gemini.key_present;
+  $("#provHint").textContent = cfg.gemini.key_present ? "Gemini makes real model calls and may cost money on your key." :
+    "Set GEMINI_API_KEY in the terminal that starts this dashboard to enable Gemini.";
+  syncProv();
+}
+function syncProv() {
+  const v = document.querySelector("input[name=prov]:checked").value;
+  document.querySelectorAll("#provSeg label").forEach(l => l.classList.toggle("sel", l.querySelector("input").checked));
+  $("#scenBox").style.display = v === "mock" ? "" : "none";
+  const t = $("#reqText"); t.disabled = v === "mock";
+  t.placeholder = v === "mock" ? "Mock is scripted for REQ-101.md and ignores pasted text. Choose Gemini to use your own requirement." : "As a buyer, I want…";
+  if (v === "mock") t.value = "";
+}
+document.querySelectorAll("input[name=prov]").forEach(i => i.addEventListener("change", syncProv));
+
+$("#startBtn").addEventListener("click", async e => {
+  const b = e.target; b.disabled = true;
+  try {
+    const text = $("#reqText").value.trim();
+    const body = { provider: document.querySelector("input[name=prov]:checked").value, scenario: $("#scen").value };
+    if (text) body.requirement_text = text; else body.requirement_file = $("#reqFile").value;
+    const r = await api("/api/runs", { method: "POST", body: JSON.stringify(body) });
+    selected = r.id; lastJSON = ""; await refreshList(); await refresh();
+  } catch (err) { toast(err.message); } finally { b.disabled = false; }
+});
+
+async function refreshList() {
+  const rows = await api("/api/runs");
+  $("#runList").replaceChildren(...rows.map(r => h("li", { class: r.id === selected ? "sel" : "", onclick: () => { selected = r.id; lastJSON = ""; refreshList(); refresh(); } },
+    h("div", { class: "row" }, h("span", { class: "id" }, r.id), h("span", { class: "sp", style: "flex:1" }), pill(r.state)),
+    h("div", { class: "rq" }, r.requirement.replace(/^#[^\n]*\n+/, "").replace(/\s+/g, " ")), h("div", { class: "rq" }, ago(r.created)))));
+  if (!rows.length) $("#runList").replaceChildren(h("li", { class: "mute" }, "No runs yet."));
+}
+
+const STAGES = ["Plan", "Plan approval", "Tests", "Build & check", "Release pack", "Merge approval", "Deploy approval"];
+function stageIndex(s) {
+  const m = { planning: 0, plan_gate: 1, tests: 2, implement: 3, release: 4, final_gate: 5, merged: 6, done: 7 };
+  if (s.stage !== "halted") return m[s.stage] ?? 0;
+  if (!s.spec) return 0; if (!s.approvals.some(a => a.gate === "plan")) return 1;
+  if (!s.events.some(e => e.kind === "tests_red_check")) return 2;
+  if (s.approvals.some(a => a.gate === "merge" && a.decision === "approve")) return 6;
+  return s.evidence ? 5 : 3;          // an approval pack exists only once every gate passed
+}
+function stepper(s) {
+  const cur = stageIndex(s), halted = s.stage === "halted" || /^FAILED/.test(s.state);
+  return h("div", { class: "steps" }, STAGES.map((n, i) => h("div", { class: "step " + (i < cur ? "done" : i === cur ? (halted ? "bad" : "cur") : "") },
+    n, i === 3 && s.attempt > 1 ? h("div", { class: "mute" }, "attempt " + s.attempt + "/3") : null)));
+}
+
+function decisionPanel(s) {
+  const by = h("input", { id: "by", placeholder: "Your name", value: ls("by"), maxlength: "80", autocomplete: "name" });
+  const note = h("input", { id: "note", placeholder: "Optional note", maxlength: "500" });
+  const act = async (kind, decision) => {
+    const name = by.value.trim(); if (!name) { toast("Enter your name: decisions are recorded against it."); by.focus(); return; }
+    ls("by", name);
+    try { const r = await api("/api/runs/" + s.id + "/" + kind, { method: "POST", body: JSON.stringify({ decision, by: name, note: note.value }) }); lastJSON = ""; toast(r.state ? "Recorded: " + r.state : "Accepted, working…"); await refresh(); await refreshList(); }
+    catch (err) { toast(err.message); await refresh(); }
+  };
+  const buttons = (kind, yes, no) => h("div", { class: "actions" }, h("div", null, h("label", { for: "by" }, "Reviewer"), by), h("div", null, h("label", { for: "note" }, "Note"), note),
+    h("button", { class: "primary", onclick: () => act(kind, "approve") }, yes), h("button", { class: "danger", onclick: () => act(kind, "reject") }, no));
+  if (s.action === "plan") return h("section", { class: "card gate" }, h("h2", null, "Your decision: approve the plan?"),
+    h("p", { style: "margin:0" }, "Agents proposed this scope. Nothing is written to the sandbox until you approve."),
+    h("p", { class: "mono", style: "margin:8px 0 0" }, "Files the developer may change: " + (s.design ? s.design.allowed_paths.join(", ") : "?")),
+    buttons("plan", "Approve plan", "Reject"));
+  if (s.action === "merge") {
+    const ev = s.evidence, bad = ev && !ev.intact;
+    return h("section", { class: "card gate" }, h("h2", null, "Your decision: merge this change?"),
+      h("div", { class: "row" }, h("span", { class: "chip " + (s.recommendation === "approve" ? "ok" : "bad") }, "System recommendation: " + (s.recommendation || "?")),
+        s.rubric ? h("span", { class: "chip" }, "Rubric " + s.rubric.score + "/100") : null,
+        ev ? h("span", { class: "chip " + (ev.intact ? "ok" : "bad") }, ev.intact ? "Evidence hashes verified" : "EVIDENCE CHANGED") : null),
+      bad ? h("p", { class: "mute" }, ev.problems.join("; ")) : null,
+      h("p", { class: "mute", style: "margin:8px 0 0" }, "Review the Diff and Approval pack tabs first. Approving merges the reviewed commit into the sandbox's main branch only; deployment is a separate gate."),
+      buttons("merge", "Approve merge", "Reject"));
+  }
+  if (s.action === "deploy") return h("section", { class: "card gate" }, h("h2", null, "Your decision: request deployment?"),
+    h("p", { style: "margin:0" }, "Merged as " + s.merge_commit + ". Deployment is mocked: this only writes a deploy request file."), buttons("deploy", "Approve deploy", "Reject"));
+  if (s.action === "resume") return h("section", { class: "card gate" }, h("h2", null, "Model provider was unavailable"),
+    h("p", { style: "margin:0" }, "Progress is saved. Finished agents are not re-run."),
+    h("div", { class: "actions" }, h("button", { class: "primary", onclick: async () => { try { await api("/api/runs/" + s.id + "/resume", { method: "POST", body: "{}" }); lastJSON = ""; toast("Resuming…"); refresh(); } catch (e) { toast(e.message); } } }, "Resume")));
+  return null;
+}
+
+const bytab = {
+  summary(s) {
+    const out = [];
+    if (s.spec) {
+      out.push(h("h2", null, "Acceptance criteria"), h("ul", { class: "plain" }, s.spec.acceptance_criteria.map(c => h("li", null, h("b", null, c.id + " "), c.text))));
+      if (s.spec.open_questions.length) out.push(h("h2", { style: "margin-top:14px" }, "Assumptions the analyst flagged"), h("ul", { class: "plain" }, s.spec.open_questions.map(q => h("li", null, q))));
+    }
+    if (s.design) out.push(h("h2", { style: "margin-top:14px" }, "Architecture"), h("p", { style: "margin:0 0 6px" }, s.design.design),
+      h("ul", { class: "plain" }, s.design.impacted.map(i => h("li", null, h("span", { class: "mono" }, i.path), ": ", i.reason))));
+    if (s.history.length) out.push(h("h2", { style: "margin-top:14px" }, "Iteration history"), h("ul", { class: "plain" }, s.history.map(x => h("li", null, x))));
+    if (!out.length) out.push(h("div", { class: "empty" }, "Planning in progress…"));
+    return out;
+  },
+  checks(s) {
+    if (!s.results.length) return h("div", { class: "empty" }, "No checks have run yet.");
+    const rows = s.results.map(r => h("div", { class: "chk" }, h("span", { class: "badge " + (r.passed ? "pass" : r.advisory ? "info" : "fail") }, r.passed ? "PASS" : r.advisory ? "WARN" : "FAIL"),
+      h("div", { style: "flex:1;min-width:0" }, h("b", null, r.name, r.advisory && !r.passed ? " (advisory, does not block)" : ""), h("div", { class: "mute" }, r.summary),
+        !r.passed && (r.output || (r.findings && r.findings.length)) ? h("details", { open: true }, h("summary", null, "details"), h("pre", null, r.output || JSON.stringify(r.findings, null, 2))) : null)));
+    const extra = [h("div", { class: "chk" }, h("span", { class: "badge " + (s.tests_fail_before ? "pass" : "info") }, s.tests_fail_before ? "PASS" : "WARN"),
+      h("div", null, h("b", null, "tests detect the missing behaviour"), h("div", { class: "mute" }, "QA tests " + (s.tests_fail_before ? "fail" : "do not fail") + " on the unmodified code (TDD red).")))];
+    if (s.oracle) extra.push(h("div", { class: "chk" }, h("span", { class: "badge " + (s.oracle === "passed" ? "pass" : "info") }, s.oracle === "passed" ? "PASS" : "INFO"),
+      h("div", null, h("b", null, "QA tests vs reference oracle"), h("div", { class: "mute" }, s.oracle === "passed" ? "QA's tests pass against the held-out reference, so their expected values are right." : s.oracle))));
+    const rub = s.rubric ? [h("h2", { style: "margin-top:16px" }, "Rubric " + s.rubric.score + "/100 (pass " + s.rubric.pass_mark + ")"),
+      h("table", null, h("tbody", null, s.rubric.items.map(i => h("tr", null, h("td", null, i.met === true ? "✓" : i.met === false ? "✗" : "–"), h("td", null, i.criterion), h("td", { class: "n mute" }, i.weight)))))] : [];
+    return [rows, extra, rub];
+  },
+  diff(s) {
+    if (!s.diff) return h("div", { class: "empty" }, "No change set yet. It appears once checks pass.");
+    return h("pre", { class: "diff" }, s.diff.split("\n").map(l => h("span", { class: l.startsWith("+++") || l.startsWith("---") || l.startsWith("diff") || l.startsWith("index") ? "h" : l.startsWith("@@") ? "h" : l.startsWith("+") ? "a" : l.startsWith("-") ? "d" : "" }, l || " ")));
+  },
+  review(s) { return s.review ? h("pre", null, s.review) : h("div", { class: "empty" }, "The approval pack is written by the release agent after all checks pass."); },
+  agents(s) {
+    const u = s.usage;
+    return [h("p", { class: "mute", style: "margin-top:0" }, u.calls + " model calls · " + u.tokens_in + " tokens in / " + u.tokens_out + " out · $" + u.cost_usd + " estimated · " + Math.round(u.latency_ms) + " ms model latency"),
+      h("table", null, h("thead", null, h("tr", null, ["#", "Agent", "Status", "Model", "Tokens in/out", "Cost $", "ms"].map((x, i) => h("th", { class: i > 3 ? "n" : "" }, x)))),
+        h("tbody", null, s.steps.map(st => [h("tr", null, h("td", null, st.seq), h("td", null, st.agent), h("td", null, h("span", { class: "chip " + (st.status === "ok" ? "ok" : "bad") }, st.status)),
+          h("td", { class: "mono" }, (st.provider || "-") + "/" + (st.model || "-")), h("td", { class: "n" }, st.tokens_in + "/" + st.tokens_out), h("td", { class: "n" }, st.cost_usd.toFixed(5)), h("td", { class: "n" }, Math.round(st.latency_ms))),
+          h("tr", null, h("td", { colspan: 7, style: "padding:0 8px 6px" }, h("details", null, h("summary", null, st.error ? "error: " + st.error : "output"), h("pre", null, st.output))))])))];
+  },
+  timeline(s) {
+    const good = /^(commit|approval)$/, bad = /(failed|violation|blocked|malformed|error|tampered|halt|disagree|refused|repeat|paused|rejected)/;
+    return h("div", { class: "tl" }, s.events.map(e => h("div", null, h("span", { class: "t" }, "+" + e.t.toFixed(1) + "s"), h("span", { class: "k " + (bad.test(e.kind) ? "bad" : good.test(e.kind) ? "good" : "") }, e.kind), e.detail)));
+  },
+  approvals(s) {
+    return s.approvals.length ? h("table", null, h("thead", null, h("tr", null, ["Gate", "Decision", "By", "Note", "When"].map(x => h("th", null, x)))),
+      h("tbody", null, s.approvals.map(a => h("tr", null, h("td", null, a.gate), h("td", null, a.decision), h("td", null, a.decided_by), h("td", null, a.note), h("td", null, ago(a.ts)))))) :
+      h("div", { class: "empty" }, "No human decisions yet. Nothing is merged or deployed without one.");
+  },
+};
+const TABS = [["summary", "Summary"], ["checks", "Checks"], ["diff", "Diff"], ["review", "Approval pack"], ["agents", "Agents & cost"], ["timeline", "Timeline"], ["approvals", "Approvals"]];
+
+function render(s) {
+  const gate = decisionPanel(s);
+  const keep = { by: $("#by") && $("#by").value, note: $("#note") && $("#note").value };
+  const root = h("div", null,
+    h("section", { class: "card" },
+      h("div", { class: "row" }, h("h3", { class: "title" }, s.id), pill(s.state), h("span", { class: "chip" }, s.provider === "mock" ? "mock model · " + s.scenario : "gemini")),
+      h("p", { class: "req" }, s.requirement), stepper(s),
+      s.halt_reason ? h("div", { class: "banner " + (/^(ESCALATED|BLOCKED)/.test(s.state) ? "warn" : "bad") }, h("b", null, LABEL[s.state] || s.state), s.halt_reason) : null,
+      s.state === "DEPLOYED_MOCK" ? h("div", { class: "banner ok" }, h("b", null, "Done"), "Merged and mock-deployed, with every human decision recorded.") : null),
+    gate,
+    h("section", { class: "card" }, h("div", { class: "tabs", role: "tablist" }, TABS.map(([k, n]) => h("button", { class: "tab" + (k === tab ? " on" : ""), role: "tab", "aria-selected": String(k === tab), onclick: () => { tab = k; ls("tab", k); render(s); } }, n))), bytab[tab](s)));
+  $("#detail").replaceChildren(root);
+  if (keep.by && $("#by")) $("#by").value = keep.by; if (keep.note && $("#note")) $("#note").value = keep.note;
+}
+async function refresh() {
+  if (!selected) return;
+  try {
+    const raw = JSON.stringify(await api("/api/runs/" + selected));
+    if (raw === lastJSON) return; lastJSON = raw; render(JSON.parse(raw));
+  } catch (e) { $("#detail").replaceChildren(h("div", { class: "card empty" }, e.message)); }
+}
+(async function init() {
+  await loadConfig(); await refreshList();
+  const rows = await api("/api/runs"); if (rows.length) { selected = rows[0].id; await refreshList(); await refresh(); }
+  poll = setInterval(() => { refresh(); refreshList().catch(() => {}); }, 1800);
+})();
+</script>
+</body>
+</html>
