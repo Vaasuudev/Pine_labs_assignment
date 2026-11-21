@@ -22,7 +22,7 @@ server are standard library.
 
 **Windows (PowerShell)**: set the key for this terminal only, then start from that same terminal:
 ```powershell
-$env:GEMINI_API_KEY = "paste-your-key"        # or: setx GEMINI_API_KEY "..." and open a new terminal
+$env:GEMINI_API_KEY = "GEMINI_API_KEY"        # or: setx GEMINI_API_KEY "..." and open a new terminal
 $env:GEMINI_MODEL   = "gemini-3.1-flash-lite"  # optional; default shown. Use any model your key can access
 python cli.py check-llm                        # ONE tiny call: confirms key, model, network
 python cli.py dashboard                        # http://127.0.0.1:8765
@@ -97,7 +97,7 @@ Loopback only; Host header checked (DNS rebinding); per-session token on every P
 cap; run ids validated; strict CSP with a nonce; the UI never uses `innerHTML`, so model output renders as
 text. Single reviewer on one machine: reviewer names are self-reported.
 
-## Limitations (please read)
+## Limitations
 
 - Sandbox isolates **writes** (copy + git branch + path rules). It is not an OS sandbox: tests execute
   generated code on your machine. Production needs a container with no network and resource limits.
